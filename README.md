@@ -16,10 +16,14 @@ Spec depth + model choice produce measurable variance in LLM-generated database 
    - `spec_b.md` — balanced (~480 words): + conventions, integrity, safe-change rules.
    - `spec_c.md` — comprehensive (~900 words): + examples, edge cases, testing bar.
 3. Run via Hermes, save SQL to `02-outputs/r<round>_<model>_<spec>.sql`:
-   - Round 1: Sonnet × {A, B, C}
-   - Round 2: Opus × {A, B, C}
-   - Round 3: Haiku × {A, B, C}
-   - Round 4 (cross-vendor, Spec B only): DeepSeek (chat + reasoning) + Kimi K2 (chat + thinking)
+   - Round 1: **Claude Sonnet 4.6** (`claude-sonnet-4-6`) × {A, B, C}
+   - Round 2: **Claude Opus 4.6** (`claude-opus-4-6`) × {A, B, C}
+   - Round 3: **Claude Haiku 4.5** (`claude-haiku-4-5-20251001`) × {A, B, C}
+   - Round 4 (cross-vendor, Spec B only):
+     - **DeepSeek V4 Flash** (`deepseek-v4-flash`) — chat mode
+     - **DeepSeek V4 Pro** (`deepseek-v4-pro`) — reasoning mode
+     - **Kimi K2 0905** (`kimi-k2-0905-preview`) — chat mode
+     - **Kimi K2 Thinking** (`kimi-k2-thinking`) — reasoning mode
 4. Score each output with the rubric below, log to W&B via `scripts/log_run.py`, write findings to `03-analysis/`.
 
 ## Scoring rubric (0–100)
@@ -234,11 +238,48 @@ python scripts/log_run.py --round 4 --model kimi-k2-thinking     --spec b --outp
 
 ---
 
+## Results
+
+### Anthropic 3×3 matrix (Rounds 1–3)
+
+```
+                   Spec A (minimal)   Spec B (balanced)   Spec C (comprehensive)
+Haiku 4.5                48                 80                   88
+Sonnet 4.6               60                 86                   97
+Opus 4.6                 72                 91                  100
+```
+
+### Cross-vendor on Spec B (Round 4)
+
+```
+Model                          Mode        Score
+─────────────────────────────  ──────────  ─────
+Kimi K2 0905                   chat           73
+Claude Haiku 4.5               chat           80
+DeepSeek V4 Flash              chat           81
+Claude Sonnet 4.6              chat           86
+Kimi K2 Thinking               reasoning      87
+DeepSeek V4 Pro                reasoning      90
+Claude Opus 4.6                chat           91
+```
+
+### Key findings
+
+1. **Spec depth matters more than model tier**: Haiku+C (88) beats Opus+A (72).
+2. **Reasoning modes consistently outperform chat**: +9 for DeepSeek, +14 for Kimi.
+3. **DeepSeek V4 Pro (90) rivals Claude Opus (91)** on a well-written spec.
+4. **Kimi K2 chat (73) is the weakest** — below even Haiku (80) on the same spec.
+5. **Diminishing returns past Spec B**: A→B gains +26 avg, B→C gains only +9 avg.
+
+## W&B visualization tips
+
+The 13 runs are tagged with `round` and `spec` in W&B config. To improve chart readability:
+
+1. **Group by round**: In Workspace → click **Group** → select `round`. This separates R1/R2/R3/R4 into panels.
+2. **Filter by spec**: Use **Filter** → `spec = b` to compare all models on the same spec.
+3. **Sort by total**: In the Runs table, click the `total` column header to sort by score.
+
 ## Done when
 
-- 13 SQL outputs scored and logged:
-  - Round 1: 3 (Sonnet × A/B/C)
-  - Round 2: 3 (Opus × A/B/C)
-  - Round 3: 3 (Haiku × A/B/C)
-  - Round 4: 4 (DeepSeek chat + reasoning, Kimi chat + thinking, all on Spec B)
+- ✅ 13 SQL outputs scored and logged (R1–R4).
 - Comparison matrix + recommendation (which spec depth, which model, which vendor) for JikkoOps.
