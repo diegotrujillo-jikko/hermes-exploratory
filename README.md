@@ -19,6 +19,7 @@ Spec depth + model choice produce measurable variance in LLM-generated database 
    - Round 1: Sonnet × {A, B, C}
    - Round 2: Opus × {A, B, C}
    - Round 3: Spec B × {Sonnet, Opus, Haiku}
+   - Round 4 (cross-vendor, Spec B only): DeepSeek (chat + reasoning) + Kimi K2 (chat + thinking)
 4. Score each output with the rubric below, log to W&B via `scripts/log_run.py`, write findings to `03-analysis/`.
 
 ## Scoring rubric (0–100)
@@ -50,6 +51,8 @@ requirements.txt # wandb, python-dotenv
 - **OS**: Linux, macOS, or WSL2. Native Windows is "early beta" upstream — use WSL2.
 - **Python 3.11+** (Hermes installs its own via `uv`, but `wandb` here needs Python on `PATH`).
 - **An Anthropic API key** — https://console.anthropic.com/settings/keys.
+- **A DeepSeek API key** — https://platform.deepseek.com/api_keys (needed for Round 4).
+- **A Moonshot / Kimi API key** — https://platform.moonshot.ai/console/api-keys (needed for Round 4).
 - **A Weights & Biases account** — https://wandb.ai/signup (free tier is fine).
 - **Git, curl, a POSIX shell** (Bash / Zsh).
 
@@ -99,7 +102,7 @@ $EDITOR .env   # fill in ANTHROPIC_API_KEY and WANDB_API_KEY
 
 `.env` is git-ignored — never commit it.
 
-## 4. Configure Hermes to use your Anthropic key
+## 4. Configure Hermes providers
 
 Easiest path (one-time setup wizard):
 
@@ -107,18 +110,29 @@ Easiest path (one-time setup wizard):
 hermes setup
 ```
 
-Or set the provider/model manually:
+Or set the providers manually. The keys below feed Rounds 1–3 (Anthropic)
+and Round 4 (DeepSeek, Kimi/Moonshot):
 
 ```bash
-hermes model     # interactive picker — choose Anthropic + a Claude model
-hermes config set anthropic_api_key "$ANTHROPIC_API_KEY"   # if not done via setup
+hermes config set anthropic_api_key "$ANTHROPIC_API_KEY"
+hermes config set deepseek_api_key  "$DEEPSEEK_API_KEY"
+hermes config set moonshot_api_key  "$MOONSHOT_API_KEY"
 ```
 
-Verify the model is callable:
+> Exact config keys may vary between Hermes versions — if `config set` rejects a name,
+> run `hermes config list` to see the accepted keys for your install, or use `hermes setup`.
+
+Pick the active model at run time:
+
+```bash
+hermes model     # interactive picker — pick Anthropic / DeepSeek / Moonshot + a model
+```
+
+Verify a model is callable:
 
 ```bash
 hermes
-# in the TUI: type "hello" — confirm a Claude response comes back
+# in the TUI: type "hello" — confirm a response comes back
 # exit with Ctrl+D
 ```
 
@@ -185,7 +199,46 @@ Then open <https://wandb.ai/> → project `hermes-exploratory` → three runs vi
 
 ---
 
+# Run Round 4 (cross-vendor, Spec B only)
+
+Round 4 holds the spec constant (B — the depth assumed to win Rounds 1–2) and varies the **vendor + reasoning vs. chat** axis. Four runs total.
+
+| Output file | Hermes model id |
+|---|---|
+| `02-outputs/r4_deepseek-v4-flash_b.sql` | `deepseek-v4-flash` (DeepSeek chat) |
+| `02-outputs/r4_deepseek-v4-pro_b.sql`   | `deepseek-v4-pro` (DeepSeek reasoning) |
+| `02-outputs/r4_kimi-k2-0905_b.sql`      | `kimi-k2-0905-preview` (Kimi chat) |
+| `02-outputs/r4_kimi-k2-thinking_b.sql`  | `kimi-k2-thinking` (Kimi reasoning) |
+
+For each model, in the Hermes TUI:
+
+```
+/new
+/model deepseek:deepseek-v4-flash       # then deepseek-v4-pro, then the two kimi ids
+```
+
+Paste `01-specs/spec_b.md` and the same SQL-only prompt used in Round 1. Save the reply to the matching filename above.
+
+Log each run:
+
+```bash
+python scripts/log_run.py --round 4 --model deepseek-v4-flash    --spec b --output 02-outputs/r4_deepseek-v4-flash_b.sql
+python scripts/log_run.py --round 4 --model deepseek-v4-pro      --spec b --output 02-outputs/r4_deepseek-v4-pro_b.sql
+python scripts/log_run.py --round 4 --model kimi-k2-0905-preview --spec b --output 02-outputs/r4_kimi-k2-0905_b.sql
+python scripts/log_run.py --round 4 --model kimi-k2-thinking     --spec b --output 02-outputs/r4_kimi-k2-thinking_b.sql
+```
+
+> The exact Hermes provider prefix (`deepseek:` vs `moonshot:`) depends on your Hermes
+> version's model picker — use `hermes model` to see the list. The `--model` value passed
+> to `log_run.py` is a free-form label and is what shows up in W&B.
+
+---
+
 ## Done when
 
-- 7 SQL outputs (Round 1: 3, Round 2: 3, Round 3: 3 minus 1 already counted as Round 1 Sonnet+B) scored and logged.
-- Comparison matrix + recommendation (which spec depth, which model) for JikkoOps.
+- 11 SQL outputs scored and logged:
+  - Round 1: 3 (Sonnet × A/B/C)
+  - Round 2: 3 (Opus × A/B/C)
+  - Round 3: 1 (Haiku × B — Sonnet × B and Opus × B reused from Rounds 1–2)
+  - Round 4: 4 (DeepSeek chat + reasoning, Kimi chat + thinking, all on Spec B)
+- Comparison matrix + recommendation (which spec depth, which model, which vendor) for JikkoOps.

@@ -15,7 +15,10 @@ Somewhere in between is a sweet spot. This PoC finds it on a small, throwaway do
 
 The independent variable is **spec depth** (A: ~150 words, B: ~480 words, C: ~900 words). The dependent variable is **output quality** scored against a fixed rubric (Structure, Naming, Integrity, Comments, Query feasibility, Spec adherence).
 
-The secondary variable is **model choice** (Sonnet, Opus, Haiku), measured in Round 3 against the depth that wins Rounds 1 and 2.
+Two secondary variables, each studied in its own round at the depth that wins Rounds 1–2 (assumed Spec B):
+
+- **Model tier within one vendor** (Round 3): Sonnet vs. Opus vs. Haiku — controls for "smarter model masks spec-depth effect".
+- **Vendor + reasoning mode** (Round 4): DeepSeek chat (`deepseek-v4-flash`) vs. DeepSeek reasoning (`deepseek-v4-pro`) vs. Kimi K2 chat (`kimi-k2-0905-preview`) vs. Kimi K2 thinking (`kimi-k2-thinking`) — checks whether the recommendation generalises beyond the Anthropic family and whether explicit "reasoning" / "thinking" modes change schema quality.
 
 ## Why a non-JikkoOps domain
 
