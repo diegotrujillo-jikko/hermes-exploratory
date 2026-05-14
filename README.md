@@ -8,6 +8,40 @@ Bounded experiment to validate **context engineering** with **Hermes** (LLM orch
 
 Spec depth + model choice produce measurable variance in LLM-generated database schemas. Find the sweet spot.
 
+## Conceptual diagram
+
+```mermaid
+flowchart LR
+    subgraph PURPOSE["Purpose"]
+        H["Hypothesis<br/>spec depth × model<br/>= schema quality variance"]
+    end
+
+    subgraph PROCESS["Process"]
+        direction TB
+        S["3 specs<br/>A: minimal (~150w)<br/>B: balanced (~480w)<br/>C: comprehensive (~900w)"]
+        M["4 rounds × models<br/>R1 Sonnet 4.6 × A/B/C<br/>R2 Opus 4.6 × A/B/C<br/>R3 Haiku 4.5 × A/B/C<br/>R4 DeepSeek + Kimi × B"]
+        HX["Hermes CLI<br/>(NousResearch)"]
+        SQL["13 SQL outputs<br/>02-outputs/r*.sql"]
+        SCORE["Rubric 0–100<br/>structure · naming · integrity<br/>comments · queries · adherence"]
+        WB["W&B<br/>runs.jsonl + artifacts"]
+        S --> HX
+        M --> HX
+        HX --> SQL
+        SQL --> SCORE
+        SCORE --> WB
+    end
+
+    subgraph RESULTS["Results"]
+        direction TB
+        R1["Spec depth > model tier<br/>Haiku+C (88) beats Opus+A (72)"]
+        R2["Reasoning > chat<br/>+9 DeepSeek, +14 Kimi"]
+        R3["DeepSeek V4 Pro (90)<br/>rivals Opus 4.6 (91)"]
+        R4["Diminishing returns past Spec B<br/>A→B +26 avg, B→C +9 avg"]
+    end
+
+    PURPOSE --> PROCESS --> RESULTS
+```
+
 ## Method
 
 1. Pick a small domain (e.g. order management, auth) — **not JikkoOps**.
