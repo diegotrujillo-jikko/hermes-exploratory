@@ -29,10 +29,19 @@ RUNS_JSONL = REPO_ROOT / "03-analysis" / "runs.jsonl"
 
 VALID_SPECS = {"a", "b", "c"}
 
+SCORE_CATEGORIES = [
+    ("structure", 30),
+    ("naming", 15),
+    ("integrity", 20),
+    ("comments", 15),
+    ("query_feasibility", 10),
+    ("spec_adherence", 10),
+]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--round", type=int, required=True, choices=[1, 2, 3])
+    parser.add_argument("--round", type=int, required=True, choices=[1, 2, 3, 4])
     parser.add_argument("--model", type=str, required=True,
                         help="model id, e.g. sonnet-4-6, opus-4-7, haiku-4-5")
     parser.add_argument("--spec", type=str, required=True, choices=sorted(VALID_SPECS))
@@ -41,6 +50,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--notes", type=str, default="")
     parser.add_argument("--no-wandb", action="store_true",
                         help="skip W&B upload (still writes JSONL)")
+    # Scoring flags
+    parser.add_argument("--structure", type=int, default=None, help="Structure score (0-30)")
+    parser.add_argument("--naming", type=int, default=None, help="Naming score (0-15)")
+    parser.add_argument("--integrity", type=int, default=None, help="Integrity score (0-20)")
+    parser.add_argument("--comments", type=int, default=None, help="Comments score (0-15)")
+    parser.add_argument("--query-feasibility", type=int, default=None, help="Query feasibility score (0-10)")
+    parser.add_argument("--spec-adherence", type=int, default=None, help="Spec adherence score (0-10)")
     return parser.parse_args()
 
 
@@ -68,6 +84,12 @@ def log_to_wandb(record: dict, output_path: Path) -> None:
         },
         reinit=True,
     )
+
+    # Log numeric scores as W&B metrics (enables charts)
+    scores = record.get("scores")
+    if scores:
+        run.log(scores)
+
     artifact = wandb.Artifact(
         name=f"sql_r{record['round']}_{record['model']}_{record['spec']}",
         type="sql_output",
@@ -86,6 +108,15 @@ def main() -> int:
         sys.stderr.write(f"error: output file not found: {output_path}\n")
         return 1
 
+    # Build scores dict from CLI flags
+    scores = {}
+    for cat, max_val in SCORE_CATEGORIES:
+        val = getattr(args, cat.replace("-", "_"), None)
+        if val is not None:
+            scores[cat] = val
+    if scores:
+        scores["total"] = sum(scores.values())
+
     record = {
         "round": args.round,
         "model": args.model,
@@ -94,6 +125,8 @@ def main() -> int:
         "notes": args.notes,
         "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
+    if scores:
+        record["scores"] = scores
     append_jsonl(record)
     print(f"appended to {RUNS_JSONL.relative_to(REPO_ROOT)}")
 
