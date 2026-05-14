@@ -18,7 +18,7 @@ Spec depth + model choice produce measurable variance in LLM-generated database 
 3. Run via Hermes, save SQL to `02-outputs/r<round>_<model>_<spec>.sql`:
    - Round 1: Sonnet × {A, B, C}
    - Round 2: Opus × {A, B, C}
-   - Round 3: Spec B × {Sonnet, Opus, Haiku}
+   - Round 3: Haiku × {A, B, C}
    - Round 4 (cross-vendor, Spec B only): DeepSeek (chat + reasoning) + Kimi K2 (chat + thinking)
 4. Score each output with the rubric below, log to W&B via `scripts/log_run.py`, write findings to `03-analysis/`.
 
@@ -236,9 +236,9 @@ python scripts/log_run.py --round 4 --model kimi-k2-thinking     --spec b --outp
 
 ## Done when
 
-- 11 SQL outputs scored and logged:
+- 13 SQL outputs scored and logged:
   - Round 1: 3 (Sonnet × A/B/C)
   - Round 2: 3 (Opus × A/B/C)
-  - Round 3: 1 (Haiku × B — Sonnet × B and Opus × B reused from Rounds 1–2)
+  - Round 3: 3 (Haiku × A/B/C)
   - Round 4: 4 (DeepSeek chat + reasoning, Kimi chat + thinking, all on Spec B)
 - Comparison matrix + recommendation (which spec depth, which model, which vendor) for JikkoOps.
