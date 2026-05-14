@@ -249,6 +249,17 @@ Sonnet 4.6               60                 86                   97
 Opus 4.6                 72                 91                  100
 ```
 
+### By spec depth (transposed — same data, spec-centric view)
+
+```
+                   Haiku 4.5   Sonnet 4.6   Opus 4.6   Spread
+Spec A (minimal)        48          60          72       24 pts
+Spec B (balanced)       80          86          91       11 pts
+Spec C (comprehensive)  88          97         100       12 pts
+```
+
+> A good spec narrows the quality gap between models: Spec A has a 24-point spread, Spec B/C only 11–12.
+
 ### Cross-vendor on Spec B (Round 4)
 
 ```
@@ -282,4 +293,4 @@ The 13 runs are tagged with `round` and `spec` in W&B config. To improve chart r
 ## Done when
 
 - ✅ 13 SQL outputs scored and logged (R1–R4).
-- Comparison matrix + recommendation (which spec depth, which model, which vendor) for JikkoOps.
+- ✅ Comparison matrix + recommendation → see [`03-analysis/ANALYSIS.md`](./03-analysis/ANALYSIS.md).
