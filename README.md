@@ -2,6 +2,8 @@
 
 Bounded experiment to validate **context engineering** with **Hermes** (LLM orchestrator) and **wan.db** (W&B observability) before applying the methodology to JikkoOps.
 
+> See [METHODOLOGY.md](./METHODOLOGY.md) for the rationale (why this experiment, what we measure, what ships back to JikkoOps).
+
 ## Hypothesis
 
 Spec depth + model choice produce measurable variance in LLM-generated database schemas. Find the sweet spot.
