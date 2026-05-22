@@ -100,7 +100,7 @@ def log_to_wandb(record: dict, output_path: Path) -> None:
 
 
 def main() -> int:
-    load_dotenv(REPO_ROOT / ".env")
+    load_dotenv(REPO_ROOT.parent / ".env")  # .env is shared at the repo root
     args = parse_args()
 
     output_path = (REPO_ROOT / args.output).resolve()

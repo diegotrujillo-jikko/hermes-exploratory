@@ -1,6 +1,6 @@
 # Phase 2 — Automated spec quality gate
 
-Phase 1 (repo root: `01-specs/` … `04-skills/`) was a **manual, exploratory**
+Phase 1 (`phase-1/`: `01-specs/` … `04-skills/`) was a **manual, exploratory**
 experiment: find which spec depth × model produces the best SQL, scored by hand.
 That exercise is **done and stays untouched**.
 
@@ -78,7 +78,7 @@ python scripts/gate.py --spec spec-06-reportes   # echoes PASS/BLOCKED, sets exi
 
 ## Relationship to Phase 1
 
-| | Phase 1 (root) | Phase 2 (here) |
+| | Phase 1 (`phase-1/`) | Phase 2 (here) |
 |---|---|---|
 | Goal | find the sweet spot | enforce it on every spec |
 | Trigger | human runs CLI | PR push |
