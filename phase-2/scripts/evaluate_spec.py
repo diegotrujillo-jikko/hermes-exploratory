@@ -166,7 +166,7 @@ def main() -> int:
         "spec": spec_slug,
         "model": args.model,
         "judge": args.judge,
-        "generated_sql_path": str(sql_path.relative_to(PHASE2_ROOT)),
+        "generated_sql_path": os.path.relpath(sql_path.resolve(), PHASE2_ROOT),
         "scores": scores_with_total,
         "precision": precision_of(scores),
         "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
