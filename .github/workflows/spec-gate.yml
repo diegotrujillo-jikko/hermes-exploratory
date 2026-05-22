@@ -42,11 +42,15 @@ jobs:
 
       - name: List changed specs
         id: changed
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          base="origin/${{ github.base_ref }}"
-          git fetch origin "${{ github.base_ref }}" --depth=1
-          specs=$(git diff --name-only "$base"...HEAD -- 'phase-2/specs/*.md' \
-                  | sed 's#^phase-2/##' || true)
+          # Ask the API for the PR's changed files. git-history diffing is
+          # unreliable on the PR merge-ref checkout (returns empty silently).
+          specs=$(gh pr view "${{ github.event.pull_request.number }}" \
+                    --json files --jq '.files[].path' \
+                  | grep -E '^phase-2/specs/.*\.md$' | sed 's#^phase-2/##' || true)
+          echo "changed specs: ${specs:-<none>}"
           echo "specs<<EOF" >> "$GITHUB_OUTPUT"
           echo "$specs" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
