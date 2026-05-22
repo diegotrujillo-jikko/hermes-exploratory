@@ -4,7 +4,7 @@
 > The `spec-gate` workflow scores SQL generated from it; mean precision must
 > reach 0.85 to merge. Aim for Spec-B depth (~480 words) — Phase 1 showed that
 > is the cost/quality sweet spot. Sections below are the Phase 1 checklist
-> (see ../../03-analysis/ANALYSIS.md §5).
+> (see ../../phase-1/03-analysis/ANALYSIS.md §5).
 
 ## Domain
 <!-- What the schema represents, in 2-3 sentences. -->
