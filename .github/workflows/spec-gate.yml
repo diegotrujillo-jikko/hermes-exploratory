@@ -1,0 +1,91 @@
+# Phase 2 — spec quality gate.
+#
+# Maps the image flow:
+#   1. Designer pushes specs/spec-NN-*.md      -> the PR diff under phase-2/specs/**
+#   2. GitHub Actions detects the change       -> the `paths:` trigger below
+#   3. Hermes evaluates with 2 models          -> evaluate_spec.py per generator (config/models.yml)
+#   4. W&B logs the runs with metrics          -> evaluate_spec.py (when WANDB_API_KEY set)
+#   5. PR gets an automatic comment            -> comment_pr.py + `gh pr comment`
+#   6. precision < 0.85 -> PR blocked          -> gate.py exit code (make this a REQUIRED check)
+#   7. passes gate -> ready for merge          -> green required check unblocks merge
+#
+# To actually block merges (step 6) mark "spec-gate / evaluate" as a required
+# status check in branch protection for the default branch.
+name: spec-gate
+
+on:
+  pull_request:
+    paths:
+      - "phase-2/specs/**.md"
+
+permissions:
+  contents: read
+  pull-requests: write   # needed to post the score comment
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: phase-2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # need the base commit to diff changed specs
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: List changed specs
+        id: changed
+        run: |
+          base="origin/${{ github.base_ref }}"
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          specs=$(git diff --name-only "$base"...HEAD -- 'phase-2/specs/*.md' \
+                  | sed 's#^phase-2/##' || true)
+          echo "specs<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$specs" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Evaluate, comment, gate
+        if: steps.changed.outputs.specs != ''
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          judge=$(python -c "import yaml;print(yaml.safe_load(open('config/models.yml'))['judge'])")
+          generators=$(python -c "import yaml;print(' '.join(yaml.safe_load(open('config/models.yml'))['generators']))")
+          gen_tok=$(python -c "import yaml;print(yaml.safe_load(open('config/models.yml'))['generation_max_tokens'])")
+          jud_tok=$(python -c "import yaml;print(yaml.safe_load(open('config/models.yml'))['judge_max_tokens'])")
+
+          status=0
+          while IFS= read -r spec; do
+            [ -z "$spec" ] && continue
+            slug=$(basename "$spec" .md)
+            echo "::group::evaluate $slug"
+            for model in $generators; do
+              python scripts/evaluate_spec.py \
+                --spec "$spec" --model "$model" --judge "$judge" \
+                --gen-max-tokens "$gen_tok" --judge-max-tokens "$jud_tok" \
+                --out-dir .eval-out
+            done
+            python scripts/comment_pr.py --spec "$slug" --out-dir .eval-out --out-file comment.md
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
+            python scripts/gate.py --spec "$slug" --out-dir .eval-out || status=1
+            echo "::endgroup::"
+          done <<< "${{ steps.changed.outputs.specs }}"
+          exit $status
+
+      - name: Upload eval artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spec-gate-eval
+          path: phase-2/.eval-out/
+          if-no-files-found: ignore

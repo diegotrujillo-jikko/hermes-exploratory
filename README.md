@@ -4,6 +4,17 @@ Bounded experiment to validate **context engineering** with **Hermes** (LLM orch
 
 > See [METHODOLOGY.md](./METHODOLOGY.md) for the rationale (why this experiment, what we measure, what ships back to JikkoOps).
 
+## Phases
+
+This repo holds two separate exercises, kept in distinct folders:
+
+- **Phase 1 — exploratory (this README, `01-specs/` … `04-skills/`)**: manual sweep
+  of spec depth × model to find the SQL-quality sweet spot. Complete; left as-is.
+- **Phase 2 — automated gate ([`phase-2/`](./phase-2/README.md))**: turns the Phase 1
+  finding into a GitHub Actions gate. A spec PR is auto-scored by two models; merge
+  is blocked until mean precision ≥ 0.85. Implements the 7-step CI flow — see
+  [`phase-2/ARCHITECTURE.md`](./phase-2/ARCHITECTURE.md) for the step→file map.
+
 ## Hypothesis
 
 Spec depth + model choice produce measurable variance in LLM-generated database schemas. Find the sweet spot.

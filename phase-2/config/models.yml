@@ -1,0 +1,24 @@
+# Phase 2 evaluator config.
+#
+# Image step 3 runs two generator models ("gpt-5.5" + "gpt-5.3-codex").
+# Per the Phase 1 finding (and to require a single ANTHROPIC_API_KEY), we keep
+# Phase 1 models. Swap these ids freely — they map to image roles 1:1.
+#
+#   image "gpt-5.5"       -> generators[0]  (general)
+#   image "gpt-5.3-codex" -> generators[1]  (code/reasoning)
+#
+# To add a non-Anthropic vendor (e.g. deepseek-v4-pro from Phase 1 Round 4),
+# add its id here and provide the matching provider key as a CI secret.
+
+# Models that generate SQL from the spec under review.
+generators:
+  - claude-sonnet-4-6
+  - claude-opus-4-7
+
+# Single model that scores each generated SQL against the rubric (LLM-as-judge).
+# Kept distinct conceptually from generators; defaults to the strongest Phase 1 tier.
+judge: claude-opus-4-7
+
+# Max tokens for generation / judging. Named here to avoid magic numbers in scripts.
+generation_max_tokens: 4096
+judge_max_tokens: 1024
