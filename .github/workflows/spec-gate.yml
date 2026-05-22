@@ -42,13 +42,14 @@ jobs:
 
       - name: List changed specs
         id: changed
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # Use the PR's base/head SHAs (present because fetch-depth: 0). A shallow
-          # fetch + merge-base (...) diff silently returns empty, skipping the gate.
-          base="${{ github.event.pull_request.base.sha }}"
-          head="${{ github.event.pull_request.head.sha }}"
-          specs=$(git diff --name-only "$base" "$head" -- 'phase-2/specs/*.md' \
-                  | sed 's#^phase-2/##')
+          # Ask the API for the PR's changed files. git-history diffing is
+          # unreliable on the PR merge-ref checkout (returns empty silently).
+          specs=$(gh pr view "${{ github.event.pull_request.number }}" \
+                    --json files --jq '.files[].path' \
+                  | grep -E '^phase-2/specs/.*\.md$' | sed 's#^phase-2/##' || true)
           echo "changed specs: ${specs:-<none>}"
           echo "specs<<EOF" >> "$GITHUB_OUTPUT"
           echo "$specs" >> "$GITHUB_OUTPUT"
