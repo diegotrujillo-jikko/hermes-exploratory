@@ -1,0 +1,6 @@
+# Phase 2 (CI spec-quality gate) Python deps.
+# Phase 1 deps (wandb, python-dotenv) are reused; anthropic + pyyaml are new.
+anthropic>=0.40
+wandb>=0.18
+python-dotenv>=1.0
+PyYAML>=6.0
